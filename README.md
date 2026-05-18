@@ -55,7 +55,7 @@ This repository provides the complete reproducible implementation for the diagno
 - **Languages (10):** Arabic, English, French, Hindi, Mandarin, Portuguese, Russian, Sanskrit, Spanish, Vietnamese
 - **Generator:** HiFi-GAN (single generator — controlled setting)
 - **Genuine speech:** VoxLingua107
-- **Download:** [TODO — insert URL/DOI]
+- **Download:** https://github.com/pratiksha-purohit/GGMDDC
 
 ### MLAAD v9 + M-AILABS
 - **Reference:** Müller et al. (2024), *ICASSP*
@@ -64,14 +64,14 @@ This repository provides the complete reproducible implementation for the diagno
 - **Generators:** 55 TTS systems (generators with < 50 utterances/language excluded)
 - **Genuine speech:** M-AILABS — Solak & Naumov (2017)
   - Download: https://github.com/i-celeste-aurora/m-ailabs-dataset
-- **MLAAD download:** [TODO — insert URL/DOI]
+- **MLAAD download:** https://github.com/DigitalPhonetics/MLAAD
 
 ---
 
 ## Installation
 
 ```bash
-git clone https://github.com/[TODO]/deepfake-acoustic-geometry
+git clone https://github.com/khadijachakir5/multilingual-deepfake-generalization
 cd deepfake-acoustic-geometry
 pip install -r requirements.txt
 ```
@@ -280,7 +280,7 @@ Checkpoint files are saved in `{output}/checkpoints/`:
   author  = {Chakir, Khadija and Gahi, Youssef and El-Khatib, Khalil},
   journal = {EURASIP Journal on Audio, Speech, and Music Processing},
   year    = {2025},
-  doi     = {[TODO]}
+  doi     = {[insert after Zenodo archival]}
 }
 ```
 
@@ -289,19 +289,20 @@ Checkpoint files are saved in `{output}/checkpoints/`:
 ## Repository Structure
 
 ```
-deepfake-acoustic-geometry/
+multilingual-deepfake-generalization/
 │
 ├── pipeline_ggmddc.py     # GGMDDC pipeline — SQ1 + SQ2 + LOLO + SQ4
 ├── pipeline_mlaad.py      # MLAAD pipeline  — SQ1 + SQ2 + LOLO + LOGO + SQ4
 ├── requirements.txt       # Python dependencies
-└── README.md              # This file
+├── README.md              # This file
+└── LICENSE                # MIT License
 ```
 
 ---
 
 ## License
 
-[TODO — specify license, e.g. MIT or Apache 2.0]
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
