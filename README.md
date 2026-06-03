@@ -1,7 +1,7 @@
 # Understanding Generalisation in Multilingual Deepfake Speech Detection through Acoustic Space Geometry
 
 **Chakir, K., Gahi, Y. & El-Khatib, K.**  
-*EURASIP Journal on Audio, Speech, and Music Processing*
+*Computer Speech & Language — Elsevier*
 
 ---
 
@@ -55,16 +55,20 @@ This repository provides the complete reproducible implementation for the diagno
 - **Languages (10):** Arabic, English, French, Hindi, Mandarin, Portuguese, Russian, Sanskrit, Spanish, Vietnamese
 - **Generator:** HiFi-GAN (single generator — controlled setting)
 - **Genuine speech:** VoxLingua107
-- **Download:** https://github.com/pratiksha-purohit/GGMDDC
+- **Download:** https://www.kaggle.com/datasets/artharking/ggmddc-original  
+  *(Models and code: https://github.com/ARTHARKING55/GGMDDC)*
 
 ### MLAAD v9 + M-AILABS
-- **Reference:** Müller et al. (2024), *ICASSP*
+- **Reference:** Müller et al. (2024), *IJCNN*
 - **Structure:** ~30,764 utterances (restricted to 8 languages common to both datasets)
 - **Languages (8):** German (DE), English (EN), Spanish (ES), French (FR), Italian (IT), Polish (PL), Russian (RU), Ukrainian (UK)
 - **Generators:** 55 TTS systems (generators with < 50 utterances/language excluded)
-- **Genuine speech:** M-AILABS — Solak & Naumov (2017)
-  - Download: https://github.com/i-celeste-aurora/m-ailabs-dataset
-- **MLAAD download:** https://github.com/DigitalPhonetics/MLAAD
+- **Version used:** v9 (January 2026, 140 TTS systems, 51 languages — arXiv:2401.09512v9)
+- **Genuine speech:** M-AILABS — Solak & Naumov (2019)
+  - Download: https://www.caito.de/2019/01/03/the-m-ailabs-speech-dataset/
+  - Mirror: https://github.com/i-celeste-aurora/m-ailabs-dataset
+- **MLAAD download:** https://huggingface.co/datasets/mueller91/MLAAD  
+  *(Gated access — requires Hugging Face account and approval)*
 
 ---
 
@@ -72,7 +76,7 @@ This repository provides the complete reproducible implementation for the diagno
 
 ```bash
 git clone https://github.com/khadijachakir5/multilingual-deepfake-generalization
-cd deepfake-acoustic-geometry
+cd multilingual-deepfake-generalization
 pip install -r requirements.txt
 ```
 
@@ -104,18 +108,6 @@ python pipeline_ggmddc.py --features /path/to/features_ggmddc.pkl
 | `--output` | Output directory | `results_ggmddc/` |
 | `--features` | Pre-extracted features `.pkl` | `` |
 
-**Expected dataset structure:**
-```
-GGMDDC/
-├── arabic/
-│   ├── real/    *.wav
-│   └── fake/    *.wav
-├── english/
-│   ├── real/
-│   └── fake/
-...
-```
-
 ---
 
 ### Script 2 — MLAAD + M-AILABS (multi-generator)
@@ -139,22 +131,6 @@ python pipeline_mlaad.py --features /path/to/features_mlaad.pkl
 | `--mailabs_root` | Path to M-AILABS genuine speech | `` |
 | `--output` | Output directory | `results_mlaad/` |
 | `--features` | Pre-extracted features `.pkl` | `` |
-
-**Expected dataset structure:**
-```
-MLAAD/
-├── de/
-│   ├── tacotron2-DDC/    *.wav
-│   ├── vits/             *.wav
-│   └── ...
-├── en/
-│   └── ...
-
-M-AILABS/
-├── de_DE/  *.wav
-├── en_US/  *.wav
-...
-```
 
 ---
 
@@ -206,99 +182,7 @@ M-AILABS/
 ## Key Implementation Details
 
 ### Preprocessing — no data leakage
-All preprocessing steps (NaN imputation, log-transform, z-score normalisation) are fitted exclusively on the training fold and applied to the test fold without any information from the test set.
-
-```
-Train fold only:
-  1. Median imputation (per class)
-  2. Log-transform (skewed features, threshold = 2.0)
-  3. Z-score normalisation (μ=0, σ=1)
-  → Transform applied to test fold using train statistics
-```
-
-### LOLO vs LOGO protocols
-
-| Protocol | Applied to | Folds | Purpose |
-|----------|-----------|-------|---------|
-| LOLO (Leave-One-Language-Out) | Both corpora | 10 (GGMDDC) / 8 (MLAAD) | Language generalisation |
-| LOGO (Leave-One-Generator-Out) | MLAAD only | 55 | Generator generalisation |
-
-### Δ = AUC_LOGO − AUC_LOLO
-A positive Δ indicates that generator-related variability is better absorbed than language-related variability. Values close to zero reflect comparable robustness in both dimensions.
-
-### SQ2 projection
-Mann–Whitney and Kruskal–Wallis tests are applied to the first principal component (PCA, unsupervised) of each descriptor family to obtain a scalar representation without label leakage.
-
-### SHAP compatibility
-SHAP values are extracted robustly across different versions of the `shap` and `scikit-learn` libraries:
-```python
-if isinstance(sv_raw, list):
-    sv = np.abs(sv_raw[1])        # list: [class0, class1]
-elif sv_raw.ndim == 3:
-    sv = np.abs(sv_raw[:, :, 1])  # 3D: (samples, features, classes)
-else:
-    sv = np.abs(sv_raw)           # 2D: class-1 SHAP values
-```
-
-### t-DCF
-The tandem detection cost function reported is a simplified approximation of the ASVspoof normalised min-tDCF and should be interpreted accordingly.
-
----
-
-## Checkpointing
-
-Both scripts checkpoint intermediate results automatically. If execution is interrupted (e.g. on Colab or a cluster), simply rerun the same command — the pipeline resumes from the last completed step.
-
-Checkpoint files are saved in `{output}/checkpoints/`:
-- `audio_files_{corpus}.pkl` — scanned file list
-- `extraction_{corpus}.pkl` — partially extracted features
-- `lolo_{corpus}.pkl` — partial LOLO results
-- `logo_mlaad.pkl` — partial LOGO results
-
----
-
-## Reproducing Paper Tables
-
-| Paper table | Script | Output file |
-|-------------|--------|-------------|
-| Table 3 (Hellinger) | Both | `SQ1_representation_space.csv` |
-| Table 4 (η² decomposition) | Both | `SQ1_representation_space.csv` |
-| Table 5 (Invariance) | Both | `SQ2_invariance.csv` |
-| Table 6 (LOLO AUC) | Both | `SQ3_lolo_{corpus}.csv` |
-| Table 7 (LOGO AUC) | `pipeline_mlaad.py` | `SQ3_logo_mlaad.csv` |
-| Table 8 (Δ table) | `pipeline_mlaad.py` | `SQ3_delta.csv` |
-| Table 9 (SHAP) | Both | `SQ4_delta_shap_{protocol}.csv` |
-
----
-
-## Citation
-
-```bibtex
-@article{chakir2025generalisation,
-  title   = {Understanding Generalisation in Multilingual Deepfake Speech
-             Detection through Acoustic Space Geometry},
-  author  = {Chakir, Khadija and Gahi, Youssef and El-Khatib, Khalil},
-  journal = {EURASIP Journal on Audio, Speech, and Music Processing},
-  year    = {2025},
-  doi     = {[insert after Zenodo archival]}
-}
-```
-
----
-
-## Repository Structure
-
-```
-multilingual-deepfake-generalization/
-│
-├── pipeline_ggmddc.py     # GGMDDC pipeline — SQ1 + SQ2 + LOLO + SQ4
-├── pipeline_mlaad.py      # MLAAD pipeline  — SQ1 + SQ2 + LOLO + LOGO + SQ4
-├── requirements.txt       # Python dependencies
-├── README.md              # This file
-└── LICENSE                # MIT License
-```
-
----
+All preprocessing steps (NaN imputation, log-transform, z-score normalisation) are fitted exclusively on the training fold and applied to the test fold without any information from the test set.  ---
 
 ## License
 
@@ -308,12 +192,13 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Contact
 
-**Khadija Chakir** — khadija.chakir5@uit.ac.ma  
+**Khadija Chakir** — khadija.chakir5@uit.ac.ma 
+Laboratoire Sciences de l'Ingénieur, École Nationale des Sciences Appliquées,  
+Université Ibn Tofail, Kénitra, Morocco.
 **Youssef Gahi** — youssef.gahi@uit.ac.ma  
 Laboratoire Sciences de l'Ingénieur, École Nationale des Sciences Appliquées,  
 Université Ibn Tofail, Kénitra, Morocco.
 
 **Khalil El-Khatib** — Khalil.El-Khatib@ontariotechu.ca  
-Institute for Cyber Security and Resilient Systems,  
 Faculty of Business and Information Technology,  
 Ontario Tech University, Oshawa, ON, Canada.
